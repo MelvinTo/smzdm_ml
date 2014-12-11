@@ -1,0 +1,23 @@
+package me.hatu.smzdm
+
+import grizzled.slf4j.Logging
+
+class Article(titlec : String) extends Logging {
+	var title: String = titlec
+	var link: String = ""
+	var content: String = ""
+	var categories: List[String] = List[String]()
+	var keywords: Map[String, Int] = Map[String, Int]()
+
+	override def toString : String = {
+		return "'%s' %s %s %s...\n%s" format (	title, 
+												categories.reverse.take(2).reverse.mkString(","), 
+												link, 
+												content.substring(0,25), 
+												keywords.toList.sortBy{x => x._2}.reverse.take(3).mkString("\n"))
+	}
+
+	def addCategory(category : String) {
+		categories = categories :+ category
+	}
+}
