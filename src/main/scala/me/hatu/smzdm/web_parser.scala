@@ -5,11 +5,38 @@ import org.htmlcleaner.HtmlCleaner
 import com.huaban.analysis.jieba.JiebaSegmenter
 import java.net.URL
 import scala.collection.JavaConversions._
-
-
+import com.sun.syndication.io._
+import com.sun.syndication.feed.synd._
 
 object WebParser extends Logging {
 	private val USER_AGENT : String = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:23.0) Gecko/20100101 Firefox/23.0";
+
+	def trim(content: String) : String = {
+		return content.replaceAll("""(?m)\s+$""", "").replaceAll("""(?m)^\s+""","")
+	}
+
+	def load_new_feeds: List[Article] = {
+		var list = List[Article]()
+
+	    try {
+	      val sfi = new SyndFeedInput()
+
+	      val urls = List("http://feed.smzdm.com")
+	//            val urls = List("http://feed.smzdm.com", "http://haitao.smzdm.com/feed", "http://jy.smzdm.com/feed", "http://show.smzdm.com/feed", "http://fx.smzdm.com/feed", "http://news.smzdm.com/feed")
+	      urls.foreach(url => {
+	        var conn = new URL(url).openConnection()
+	        conn.setRequestProperty("User-Agent", USER_AGENT)
+	        val feed = sfi.build(new XmlReader(conn))
+
+	        val entries = feed.getEntries()
+
+	        list = entries.toList.map( x => parse_article(trim(x.asInstanceOf[SyndEntryImpl].getTitle), trim(x.asInstanceOf[SyndEntryImpl].getLink)) )
+	      })
+	    } catch {
+	      case e : Throwable => throw new RuntimeException(e)
+	    }
+	    return list
+	}
 
 	def parse_article(title: String, link: String) : Article = {
 	    var article = new Article(title)
@@ -30,7 +57,7 @@ object WebParser extends Logging {
 	      val itemprop = elem.getAttributeByName("itemprop")
 	      if (itemprop != null && itemprop.equalsIgnoreCase("description")) {
 	        content += elem.getText.toString
-	        debug(elem.getText.toString)
+//	        debug(elem.getText.toString)
 	      }
 	    }
 	    article.content = content
