@@ -45,4 +45,6 @@ libraryDependencies += "io.spray" %%  "spray-json" % "1.3.1"
 
 libraryDependencies += "org.scalatest" % "scalatest_2.10" % "2.2.2" % "test"
 
+libraryDependencies += "com.typesafe" % "config" % "1.2.1"
+
 resolvers += "Akka Repository" at "http://repo.akka.io/releases/"

@@ -2,11 +2,11 @@ package me.hatu.smzdm
 
 import grizzled.slf4j.Logging
 import com.mongodb.casbah.Imports._
-
+import com.typesafe.config._
 
 object ArticleDBManager extends Logging {
-  val mongodb_server : String = "192.168.59.103"
-  val mongodb_port : Integer = 27017
+  val mongodb_server : String = ConfigFactory.load().getString("smzdm.mongo.server")
+  val mongodb_port : Integer = ConfigFactory.load().getInt("smzdm.mongo.port")
   val mongoClient = MongoClient(mongodb_server, mongodb_port)
   val db = mongoClient("smzdm")
   val coll = db("articles")
