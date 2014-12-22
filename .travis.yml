@@ -4,6 +4,8 @@ scala:
 sudo: false
 services:
   - mongodb
+before_script:
+  - echo -e "Host hatu.me\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 after_success:
   - openssl aes-256-cbc -K $encrypted_b95418a7fb65_key -iv $encrypted_b95418a7fb65_iv -in .travis/aliyun.pem.enc -out .travis/aliyun.pem -d
   - ssh-add .travis/aliyun.pem
