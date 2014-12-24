@@ -3,6 +3,14 @@
         "mongo" : {
         	"server" : "127.0.0.1",
         	"port" : 27017
-        }
+        },
+        "feeds" : [
+        	"http://feed.smzdm.com",
+        	"http://haitao.smzdm.com/feed",
+        	"http://jy.smzdm.com/feed",
+        	"http://show.smzdm.com/feed",
+        	"http://fx.smzdm.com/feed",
+        	"http://news.smzdm.com/feed"
+        ]
     }
 }
