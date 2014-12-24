@@ -47,4 +47,25 @@ libraryDependencies += "org.scalatest" % "scalatest_2.10" % "2.2.2" % "test"
 
 libraryDependencies += "com.typesafe" % "config" % "1.2.1"
 
+libraryDependencies += "com.typesafe.akka" % "akka-actor_2.10" % "2.2.3"
+
+mainClass in assembly := Some("me.hatu.smzdm.FeedParser")
+
 resolvers += "Akka Repository" at "http://repo.akka.io/releases/"
+
+assemblyMergeStrategy in assembly := {
+  case PathList("akka", xs @ _*)         => MergeStrategy.first
+  case PathList("javax", xs @ _*)		=> MergeStrategy.first
+  case PathList("org", "apache", xs @ _*)		=> MergeStrategy.first
+  case PathList("plugin.properties")		=> MergeStrategy.last
+  // case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
+  case PathList("com", "esotericsoftware", xs @ _*)		=> MergeStrategy.first
+  case "mailcap"                            => MergeStrategy.first
+  case x if x.startsWith("META-INF/mailcap") => MergeStrategy.last
+  case x if x.startsWith("META-INF/mimetypes.default")       => MergeStrategy.filterDistinctLines
+
+//  case "unwanted.txt"                                => MergeStrategy.discard
+  case x =>
+    val oldStrategy = (assemblyMergeStrategy in assembly).value
+    oldStrategy(x)
+}
