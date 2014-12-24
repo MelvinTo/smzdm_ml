@@ -1,3 +1,5 @@
+seq(assemblySettings: _*)
+
 name := "smzdm"
 
 version := "1.0"
