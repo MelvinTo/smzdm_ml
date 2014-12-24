@@ -1,6 +1,3 @@
-import AssemblyKeys._
-
-seq(assemblySettings: _*)
 
 name := "smzdm"
 
