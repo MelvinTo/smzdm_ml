@@ -18,24 +18,24 @@ object WebParser extends Logging {
 	def load_new_feeds: List[Article] = {
 		var list = List[Article]()
 
-	    try {
-	      val sfi = new SyndFeedInput()
+    try {
+      val sfi = new SyndFeedInput()
 
-	      val urls = List("http://feed.smzdm.com")
-	//            val urls = List("http://feed.smzdm.com", "http://haitao.smzdm.com/feed", "http://jy.smzdm.com/feed", "http://show.smzdm.com/feed", "http://fx.smzdm.com/feed", "http://news.smzdm.com/feed")
-	      urls.foreach(url => {
-	        var conn = new URL(url).openConnection()
-	        conn.setRequestProperty("User-Agent", USER_AGENT)
-	        val feed = sfi.build(new XmlReader(conn))
+      //val urls = List("http://feed.smzdm.com")
+	    val urls = List("http://feed.smzdm.com", "http://haitao.smzdm.com/feed", "http://jy.smzdm.com/feed", "http://show.smzdm.com/feed", "http://fx.smzdm.com/feed", "http://news.smzdm.com/feed")
+      urls.foreach(url => {
+        var conn = new URL(url).openConnection()
+        conn.setRequestProperty("User-Agent", USER_AGENT)
+        val feed = sfi.build(new XmlReader(conn))
 
-	        val entries = feed.getEntries()
+        val entries = feed.getEntries()
 
-	        list = entries.toList.map( x => parse_article(trim(x.asInstanceOf[SyndEntryImpl].getTitle), trim(x.asInstanceOf[SyndEntryImpl].getLink)) )
-	      })
-	    } catch {
-	      case e : Throwable => throw new RuntimeException(e)
-	    }
-	    return list
+        list = entries.toList.map( x => parse_article(trim(x.asInstanceOf[SyndEntryImpl].getTitle), trim(x.asInstanceOf[SyndEntryImpl].getLink)) )
+      })
+    } catch {
+      case e : Throwable => throw new RuntimeException(e)
+    }
+    return list
 	}
 
 	def parse_article(title: String, link: String) : Article = {
