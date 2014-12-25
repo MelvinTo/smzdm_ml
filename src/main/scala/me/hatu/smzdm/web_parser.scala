@@ -9,9 +9,11 @@ import com.sun.syndication.io._
 import com.sun.syndication.feed.synd._
 import com.typesafe.config._
 import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.HashMap
 
 object WebParser extends Logging {
 	private val USER_AGENT : String = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:23.0) Gecko/20100101 Firefox/23.0";
+  var cache_links: HashMap[String, Int] = new HashMap[String, Int]
 
 	def trim(content: String) : String = {
 		return content.replaceAll("""(?m)\s+$""", "").replaceAll("""(?m)^\s+""","")
@@ -35,14 +37,16 @@ object WebParser extends Logging {
         val entries = feed.getEntries()
 
         val list = entries.toList
+                  .filter ( x => ! cache_links.contains(x.asInstanceOf[SyndEntryImpl].getLink))
                   .map( x => 
                     parse_article(trim(x.asInstanceOf[SyndEntryImpl].getTitle), 
                                   trim(x.asInstanceOf[SyndEntryImpl].getLink)) )
                   .filter ( x => x.valid == true )
+
+        // add article to cache to avoid duplicated downloads
+        list.foreach(article => cache_links.put(article.link, 1))
+
         listBuffer ++= list
-
-        debug(listBuffer.size)
-
       })
 
 
