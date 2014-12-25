@@ -2,10 +2,10 @@ package me.hatu.smzdm
 
 import grizzled.slf4j.Logging
 
-class Article(titlec : String) extends Logging {
+class Article(titlec : String, contentc: String = "") extends Logging {
 	var title: String = titlec
 	var link: String = ""
-	var content: String = ""
+	var content: String = contentc
 	var categories: List[String] = List[String]()
 	var keywords: Map[String, Int] = Map[String, Int]()
 	var valid: Boolean = true

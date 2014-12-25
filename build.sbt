@@ -50,6 +50,8 @@ libraryDependencies += "com.typesafe" % "config" % "1.2.1"
 
 libraryDependencies += "com.typesafe.akka" % "akka-actor_2.10" % "2.2.3"
 
+libraryDependencies += "cc.factorie" % "factorie_2.10" % "1.1.1"
+
 mainClass in assembly := Some("me.hatu.smzdm.FeedParser")
 
 resolvers += "Akka Repository" at "http://repo.akka.io/releases/"
