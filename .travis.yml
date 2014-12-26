@@ -11,5 +11,6 @@ after_success:
   - openssl aes-256-cbc -K $encrypted_b95418a7fb65_key -iv $encrypted_b95418a7fb65_iv -in .travis/aliyun.pem.enc -out .travis/aliyun.pem -d
   - chmod 700 .travis/aliyun.pem
   - eval `ssh-agent -s`; ssh-add .travis/aliyun.pem
-  - sbt -sbt-version 0.13.7 assembly
-  - scp target/scala-2.10/smzdm-assembly-1.0.jar deploy@hatu.me:~/deploy/
+  - sbt -sbt-version 0.13.7 package
+  - scp target/scala-2.10/smzdm_2.10-1.0.jar deploy@hatu.me:~/deploy/
+  - ssh deploy@hatu.me "cd deploy && pkill java && cp smzdm_2.10-1.0.jar smzdm.jar && ./run.sh"

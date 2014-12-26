@@ -14,7 +14,9 @@ object FeedParser extends Logging {
 
   def run {
     debug("Starting another round of smzdm article check")
-    val articles = WebParser.load_new_feeds
+    val articles = WebParser.load_new_articles
+    val size = articles.size
+    debug(f"Found $size%d new articles")
     for(article <- articles) {
       debug(article)
       ArticleDBManager.store_article(article)

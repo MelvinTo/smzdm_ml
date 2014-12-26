@@ -19,14 +19,22 @@ object WebParser extends Logging {
 		return content.replaceAll("""(?m)\s+$""", "").replaceAll("""(?m)^\s+""","")
 	}
 
-	def load_new_feeds: List[Article] = {
-		var listBuffer = new ListBuffer[Article]
+  def entry2Article(entry: SyndEntryImpl) : Article = {
+    val title = trim(entry.getTitle)
+    val link = trim(entry.getLink)
+    val article = new Article(title)
+    article.link = link
+    return article 
+  }
+
+  def load_feeds: List[SyndEntryImpl] = {
+    var listBuffer = new ListBuffer[SyndEntryImpl]
 
     try {
       val sfi = new SyndFeedInput()
 
       //val urls = List("http://feed.smzdm.com")
-	    val urls = ConfigFactory.load().getStringList("smzdm.feeds").toList
+      val urls = ConfigFactory.load().getStringList("smzdm.feeds").toList
       urls.foreach(url => debug(f"Add feed $url%s"))
 
       urls.foreach(url => {
@@ -36,85 +44,83 @@ object WebParser extends Logging {
 
         val entries = feed.getEntries()
 
-        val list = entries.toList
-                  .filter ( x => ! cache_links.contains(x.asInstanceOf[SyndEntryImpl].getLink))
-                  .map( x => 
-                    parse_article(trim(x.asInstanceOf[SyndEntryImpl].getTitle), 
-                                  trim(x.asInstanceOf[SyndEntryImpl].getLink)) )
-                  .filter ( x => x.valid == true )
-
-        // add article to cache to avoid duplicated downloads
-        list.foreach(article => cache_links.put(article.link, 1))
-
-        listBuffer ++= list
+        listBuffer ++= entries.toList.map(x => x.asInstanceOf[SyndEntryImpl])
       })
-
-
     } catch {
       case e : Throwable => throw new RuntimeException(e)
     }
     return listBuffer.toList
-	}
+  }
 
-	def parse_article(title: String, link: String) : Article = {
-	    var article = new Article(title)
-	    article.link = link
+  def load_new_articles: List[Article] = {
+    val articles = load_feeds .map(x => entry2Article(x))
+                              .filter(x => ! cache_links.contains(x.link))
+                              .map(x => enrichArticle(x))
+                              .filter(x => x.valid == true)
 
-      debug(f"parse article: $link%s")
+    articles.foreach(x => cache_links.put(x.link, 1))
+    
+    return articles
+  }
 
-	    val cleaner = new HtmlCleaner
-	    val props = cleaner.getProperties
+	def enrichArticle(a: Article) : Article = {
+    val article = new Article(a.title)
+    article.link = a.link
+    val link = article.link
+    debug(f"parse article: $link%s")
 
-      try {
-        val lConn = new URL(link).openConnection();
-        lConn.setRequestProperty("User-Agent", USER_AGENT)
-        lConn.connect();
-        val inputStream = lConn.getInputStream()
+    val cleaner = new HtmlCleaner
+    val props = cleaner.getProperties
 
-        val rootNode = cleaner.clean( inputStream)
+    try {
+      val lConn = new URL(link).openConnection();
+      lConn.setRequestProperty("User-Agent", USER_AGENT)
+      lConn.connect();
+      val inputStream = lConn.getInputStream()
 
-      // content 
-        val p_elements = rootNode.getElementsByName("p", true)
-        var content = ""
-        for (elem <- p_elements) {
-          val itemprop = elem.getAttributeByName("itemprop")
-          if (itemprop != null && itemprop.equalsIgnoreCase("description")) {
-            content += elem.getText.toString
+      val rootNode = cleaner.clean( inputStream)
+
+    // content 
+      val p_elements = rootNode.getElementsByName("p", true)
+      var content = ""
+      for (elem <- p_elements) {
+        val itemprop = elem.getAttributeByName("itemprop")
+        if (itemprop != null && itemprop.equalsIgnoreCase("description")) {
+          content += elem.getText.toString
 //          debug(elem.getText.toString)
-          }
         }
-        article.content = content
+      }
+      article.content = content
 
-      // category
-        val span_elements = rootNode.getElementsByName("span", true)
-        for (elem <- span_elements) {
-          val itemprop = elem.getAttributeByName("itemprop")
-          if (itemprop != null && itemprop.equalsIgnoreCase("title")) {
-            article.addCategory(elem.getText.toString)
-          }
+    // category
+      val span_elements = rootNode.getElementsByName("span", true)
+      for (elem <- span_elements) {
+        val itemprop = elem.getAttributeByName("itemprop")
+        if (itemprop != null && itemprop.equalsIgnoreCase("title")) {
+          article.addCategory(elem.getText.toString)
         }
-  
-        // keywords
-        val segmenter = new JiebaSegmenter
-        val word_list = segmenter.process(content, JiebaSegmenter.SegMode.INDEX).toList.map(token => token.word.getToken)
-        val distinct_world_list = word_list
-                        .filter{ x => x.length > 1 }
-                        .filter{ x => ! TopicModel.is_stopword(x) }
-                        .filter{ x => ! x.contains(".")} // ignore any keywords containing dot
-                        .groupBy{x => x}
-                        .map{ case (key, value) => (key, value.size)}
-        article.keywords = distinct_world_list
-      } catch {
-        case e : java.io.FileNotFoundException => 
-          debug(e)
-          article.valid = false
-        case e : java.net.UnknownHostException =>
-          debug(e)
-          article.valid = false
-        case e : Throwable =>
-          error("Caught an unexpected exception: " + e)
       }
 
-	    return article
-  	}
+      // keywords
+      val segmenter = new JiebaSegmenter
+      val word_list = segmenter.process(content, JiebaSegmenter.SegMode.INDEX).toList.map(token => token.word.getToken)
+      val distinct_world_list = word_list
+                      .filter{ x => x.length > 1 }
+                      .filter{ x => ! TopicModel.is_stopword(x) }
+                      .filter{ x => ! x.contains(".")} // ignore any keywords containing dot
+                      .groupBy{x => x}
+                      .map{ case (key, value) => (key, value.size)}
+      article.keywords = distinct_world_list
+    } catch {
+      case e : java.io.FileNotFoundException => 
+        debug(e)
+        article.valid = false
+      case e : java.net.UnknownHostException =>
+        debug(e)
+        article.valid = false
+      case e : Throwable =>
+        error("Caught an unexpected exception: " + e)
+    }
+    return article
+  }
 }
