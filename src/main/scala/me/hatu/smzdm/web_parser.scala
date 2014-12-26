@@ -56,11 +56,11 @@ object WebParser extends Logging {
     val articles = load_feeds .map(x => entry2Article(x))
                               .filter(x => ! cache_links.contains(x.link))
                               .map(x => enrichArticle(x))
-                              .filter(x => x.valid == true)
 
     articles.foreach(x => cache_links.put(x.link, 1))
-    
-    return articles
+
+    return articles.filter(x => x.valid == true)
+
   }
 
 	def enrichArticle(a: Article) : Article = {

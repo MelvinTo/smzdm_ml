@@ -30,6 +30,8 @@ class JiebaWordSegmenter extends StringSegmenter with Logging {
   }
 }
 
+object WordSeqDomain extends CategoricalSeqDomain[String]
+
 object TopicModel extends Logging {
 
   var stopwords : List[String] = List[String]()
@@ -51,8 +53,19 @@ object TopicModel extends Logging {
     return stopwords.contains(word)
   }
 
-  def train(articles: List[Article]) {
-    object WordSeqDomain extends CategoricalSeqDomain[String]
+  def predict(lda: LDA, article: Article) {
+    implicit val random = new scala.util.Random(0)
+    val model = DirectedModel()
+
+    val mySegmenter = new JiebaWordSegmenter
+    val doc = Document.fromString(WordSeqDomain, article.title, article.content, segmenter = mySegmenter)
+    lda.inferDocumentTheta(doc)
+    debug(doc.ws.categoryValues.take(10).mkString(" "))
+    debug(doc.theta)
+    doc.thetaArray.foreach(x => debug(x))
+  }
+
+  def train(articles: List[Article]) : LDA = {
     implicit val random = new scala.util.Random(0)
     val model = DirectedModel()
     // number of topics: 20
@@ -72,8 +85,12 @@ object TopicModel extends Logging {
     // number of iterations: 100
     lda.inferTopics(100)
 
-    // debug(lda.topicsSummary(20))
-    // debug(lda.topicsWordsAndPhrasesSummary(20, 20))
+    debug("xxxxxxxxxxxxxx")
+    debug(lda.topicsSummary(20))
+    debug("xxxxxxxxxxxxxx")
+    debug(lda.topicsWordsAndPhrasesSummary(20, 20))
+    debug("xxxxxxxxxxxxxx")
 
+    return lda
   }
 }

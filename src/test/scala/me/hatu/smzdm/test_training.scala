@@ -24,7 +24,12 @@ class TestTraining extends FunSuite with Logging {
         debug("XXX" + x.content)
       }
     })
-    TopicModel.train(list)
+
+    val lda = TopicModel.train(list.take(list.length - 1))
+    debug(list.last.content)
+    debug(list.last.title)
+    TopicModel.predict(lda, list.last)
+
   }
 
   test("Should be able to load sample articles") {
