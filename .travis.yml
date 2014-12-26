@@ -13,4 +13,4 @@ after_success:
   - eval `ssh-agent -s`; ssh-add .travis/aliyun.pem
   - sbt -sbt-version 0.13.7 package
   - scp target/scala-2.10/smzdm_2.10-1.0.jar deploy@hatu.me:~/deploy/
-  - ssh deploy@hatu.me "cd deploy && pkill java && cp smzdm_2.10-1.0.jar smzdm.jar && ./run.sh"
+  - ssh deploy@hatu.me "cd deploy ; pkill java ; cp smzdm_2.10-1.0.jar smzdm.jar ; ./run.sh </dev/null &>/dev/null &"
