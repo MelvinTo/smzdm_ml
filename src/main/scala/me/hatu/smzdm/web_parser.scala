@@ -38,16 +38,18 @@ object WebParser extends Logging {
       urls.foreach(url => debug(f"Add feed $url%s"))
 
       urls.foreach(url => {
-        var conn = new URL(url).openConnection()
-        conn.setRequestProperty("User-Agent", USER_AGENT)
-        val feed = sfi.build(new XmlReader(conn))
-
-        val entries = feed.getEntries()
-
-        listBuffer ++= entries.toList.map(x => x.asInstanceOf[SyndEntryImpl])
+        try {
+          var conn = new URL(url).openConnection()
+          conn.setRequestProperty("User-Agent", USER_AGENT)
+          val feed = sfi.build(new XmlReader(conn))
+          val entries = feed.getEntries()
+          listBuffer ++= entries.toList.map(x => x.asInstanceOf[SyndEntryImpl])  
+        } catch {
+          case e : Throwable => error(f"Caught exception when loading url $url%s: $e%s")
+        }
       })
     } catch {
-      case e : Throwable => throw new RuntimeException(e)
+      case e : Throwable => error("Caught exception when loading feeds: " + e)
     }
     return listBuffer.toList
   }
