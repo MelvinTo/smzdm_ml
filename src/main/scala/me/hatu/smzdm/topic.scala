@@ -32,6 +32,15 @@ class JiebaWordSegmenter extends StringSegmenter with Logging {
 
 object WordSeqDomain extends CategoricalSeqDomain[String]
 
+class ArticleTopicsMapping(article_idc: String) {
+  var article_id: String = article_idc
+  var topics: Map[String, Int] = Map()
+
+  override def toString : String = {
+    return f"$article_id%s - $topics%s"
+  }
+}
+
 object TopicModel extends Logging {
 
   var stopwords : List[String] = List[String]()
@@ -53,7 +62,7 @@ object TopicModel extends Logging {
     return stopwords.contains(word)
   }
 
-  def predict(lda: LDA, article: Article) {
+  def predict(lda: LDA, article: Article) : Document = {
     implicit val random = new scala.util.Random(0)
     val model = DirectedModel()
 
@@ -62,22 +71,38 @@ object TopicModel extends Logging {
     lda.inferDocumentTheta(doc)
     debug(doc.ws.categoryValues.take(10).mkString(" "))
     debug(doc.theta)
-    doc.thetaArray.foreach(x => debug(x))
+    doc.thetaArray.zipWithIndex.sortWith(_._1 > _._1).take(5).foreach { 
+        case (x, i) =>
+          debug(i + ":" + x)
+    }
+    return doc
+  }
+
+  def get_mapping(doc: Document) : ArticleTopicsMapping = {
+    val topicsMap = doc.thetaArray.zipWithIndex.map( x => (x._2.toString -> x._1.toInt)).toMap
+    val mapping = new ArticleTopicsMapping(doc.name)
+    mapping.topics = topicsMap
+    // debug(mapping)
+    return mapping
+  }
+
+  def get_all_mappings(lda: LDA) : List[ArticleTopicsMapping] = {
+    return lda.documents.toList.map(x => get_mapping(x.asInstanceOf[Document]))
   }
 
   def train(articles: List[Article]) : LDA = {
     implicit val random = new scala.util.Random(0)
     val model = DirectedModel()
-    // number of topics: 20
+    // number of topics: 100
     // alpha: 0.1
     // beta: 0.01
     // optimizeBurnIn: 100
-    val lda = new LDA(WordSeqDomain, 40, 0.1, 0.01, 100)(model,random)
+    val lda = new LDA(WordSeqDomain, 100, 0.1, 0.01, 100)(model,random)
     val mySegmenter = new JiebaWordSegmenter
-    articles.foreach( x => {
-      val doc = Document.fromString(WordSeqDomain, x.title, x.content, segmenter = mySegmenter)
+    articles.zipWithIndex.foreach{ case(x, i) => 
+      val doc = Document.fromString(WordSeqDomain, x.title + " " + i, x.content, segmenter = mySegmenter)
       lda.addDocument(doc, random)
-    })
+    }
 
     debug("Read "+lda.documents.size+" documents, "+WordSeqDomain.elementDomain.size+" word types, "+lda.documents.map(_.ws.length).sum+" word tokens.")
 
@@ -85,11 +110,16 @@ object TopicModel extends Logging {
     // number of iterations: 100
     lda.inferTopics(100)
 
+    // get mappings
+    val mappings = get_all_mappings(lda)
+    MappingDBManager.clean_all_mappings
+    MappingDBManager.store_all_mappings(mappings)
+
     debug("xxxxxxxxxxxxxx")
     debug(lda.topicsSummary(20))
     debug("xxxxxxxxxxxxxx")
-    debug(lda.topicsWordsAndPhrasesSummary(20, 20))
-    debug("xxxxxxxxxxxxxx")
+    // debug(lda.topicsWordsAndPhrasesSummary(20, 20))
+    // debug("xxxxxxxxxxxxxx")
 
     return lda
   }

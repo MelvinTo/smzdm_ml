@@ -26,14 +26,35 @@ class TestTraining extends FunSuite with Logging {
     })
 
     val lda = TopicModel.train(list.take(list.length - 1))
-    debug(list.last.content)
-    debug(list.last.title)
-    TopicModel.predict(lda, list.last)
 
+    val mappings = TopicModel.get_all_mappings(lda)
+    assert(mappings.size == 1484)
+
+    // use last one as testing data
+    debug("xxxxxxxxxx test article xxxxxxxx")
+    val test_article = list.last
+    debug(test_article.title)
+    debug(test_article.content)
+
+    val doc = TopicModel.predict(lda, test_article)
+    val mapping = TopicModel.get_mapping(doc)
+    debug(mapping)
+    debug("xxxxxxxxxx end of test article xxxxxxxx")
+
+    
+
+  }
+
+  test("Should be able to get top articles") {
+    // get top articles for topic 0
+    val articles = MappingDBManager.get_top_articles("0")
+    debug(articles)
+    assert(articles.size == 5)
+    assert(articles(0) == ("怀孕你需要知道的那些事 篇一：十月孕成文武相 124", 377))
   }
 
   test("Should be able to load sample articles") {
     val list = loadArticles
-    assert(list.size == 236)
+    assert(list.size == 1485)
   }
 }
