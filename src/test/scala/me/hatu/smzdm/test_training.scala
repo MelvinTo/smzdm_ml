@@ -38,10 +38,22 @@ class TestTraining extends FunSuite with Logging {
 
     val doc = TopicModel.predict(lda, test_article)
     val mapping = TopicModel.get_mapping(doc)
-    debug(mapping)
+    // debug(mapping)
+    val top_topics = TopicModel.get_top_topics(mapping)
+    top_topics.foreach(x => debug(x))
+
+    // get related articles
+    top_topics.foreach{
+      case (topic_name, theta) =>
+        val articles = MappingDBManager.get_top_articles(topic_name)
+        articles.foreach{
+          case (article_id, theta) =>
+            debug(f"Similar article: $article_id%s - $theta%d")
+        }  
+    }
     debug("xxxxxxxxxx end of test article xxxxxxxx")
 
-    
+        
 
   }
 

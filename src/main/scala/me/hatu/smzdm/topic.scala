@@ -45,6 +45,7 @@ object TopicModel extends Logging {
 
   var stopwords : List[String] = List[String]()
   var stopwords_loaded: Boolean = false
+  val top : Int = 5
 
   def load_stopwords {
     debug("Load stopwords...")
@@ -84,6 +85,10 @@ object TopicModel extends Logging {
     mapping.topics = topicsMap
     // debug(mapping)
     return mapping
+  }
+
+  def get_top_topics(mapping : ArticleTopicsMapping) : List[(String, Int)] = {
+    mapping.topics.toList.sortBy(_._2).reverse.take(top)
   }
 
   def get_all_mappings(lda: LDA) : List[ArticleTopicsMapping] = {
