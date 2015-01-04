@@ -6,8 +6,7 @@ import com.typesafe.config._
 import java.io.File
 import scala.collection.JavaConversions._
 
-class TestTraining extends FunSuite with Logging {
-
+object TestTraining {
   def loadArticles : List[Article] = {
     val fileString = getClass.getClassLoader.getResource("articles.json").toURI
     val jsonFile = new File(fileString)
@@ -15,10 +14,13 @@ class TestTraining extends FunSuite with Logging {
     val articles = config.getConfigList("articles")
     val normalized_articles = articles.toList.map( x => new Article(x.getString("title"), x.getString("content"))).filter(x => x.content.length > 10)
     return normalized_articles
-  }
+  }  
+}
+
+class TestTraining extends FunSuite with Logging {
 
   test("Should be able to run a topic modeling") {
-    val list = loadArticles
+    val list = TestTraining.loadArticles
     list.foreach ( x => {
       if(x.content.length < 10) {
         debug("XXX" + x.content)
@@ -28,7 +30,7 @@ class TestTraining extends FunSuite with Logging {
     val lda = TopicModel.train(list.take(list.length - 1))
 
     val mappings = TopicModel.get_all_mappings(lda)
-    assert(mappings.size == 1484)
+    assert(mappings.size == 1483)
 
     // use last one as testing data
     debug("xxxxxxxxxx test article xxxxxxxx")
@@ -52,9 +54,6 @@ class TestTraining extends FunSuite with Logging {
         }  
     }
     debug("xxxxxxxxxx end of test article xxxxxxxx")
-
-        
-
   }
 
   test("Should be able to get top articles") {
@@ -62,11 +61,11 @@ class TestTraining extends FunSuite with Logging {
     val articles = MappingDBManager.get_top_articles("0")
     debug(articles)
     assert(articles.size == 5)
-    assert(articles(0) == ("怀孕你需要知道的那些事 篇一：十月孕成文武相 124", 377))
+    assert(articles(0) == ("给自己的圣诞礼物：赠品多多的 Sephora 丝芙兰 购物经历 398", 274))
   }
 
   test("Should be able to load sample articles") {
-    val list = loadArticles
+    val list = TestTraining.loadArticles
     assert(list.size == 1485)
   }
 }

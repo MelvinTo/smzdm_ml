@@ -4,3 +4,12 @@ smzdm_ml
 ========
 
 topic modeling articles on smzdm.com
+
+Model
+========
+* INPUT: Person <=> Article
+  * Like
+  * Normal
+  * Dislike
+* OUTPUT: Person <=> Topics <=> Articles
+  * Does each person like each topic? 0-1

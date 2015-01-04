@@ -95,6 +95,48 @@ object TopicModel extends Logging {
     return lda.documents.toList.map(x => get_mapping(x.asInstanceOf[Document]))
   }
 
+  def get_df(doc: Document) : Map[String, Int] = {
+    return doc.ws.categoryValues.toList.distinct.map(x => (x,1)).toMap
+  }
+
+  def merge_dfs(dfs: List[Map[String, Int]]): Map[String, Int] = {
+    return dfs.map(x => x.toList).flatten
+              .groupBy(x => x._1)
+              .mapValues(x => x.map(y => y._2).sum)
+  }
+
+  def get_all_dfs(docs: List[Document]) : Map[String, Int] = {
+    return merge_dfs(docs.map(get_df))
+  }
+
+  def get_tf(doc: Document) : List[(String, String, Int)] = {
+    return doc.ws.categoryValues.toList.groupBy(x => x)
+              .mapValues(x => x.length).toList
+              .map(x => (doc.name, x._1, x._2))
+  }
+
+  def get_all_tfs(docs: List[Document]) : List[(String, String, Int)] = {
+    return docs.map(get_tf).flatten
+  }
+
+  def get_tf_idf(df: Map[String, Int], tf: List[(String, String, Int)], doc_count: Int): List[(String, String, Double)] = {
+    return tf.map( x => {
+      val doc_name = x._1
+      val term = x._2
+      val term_df = df(term)
+      val term_tf = x._3
+      val idf = scala.math.log((term_df.toDouble)/doc_count)
+      val weight = term_df*idf
+      (doc_name, term, weight)
+    })
+  }
+
+  def parse_document(title: String, content: String) : Document = {
+    val mySegmenter = new JiebaWordSegmenter
+    val doc = Document.fromString(WordSeqDomain, title, content, segmenter = mySegmenter)
+    return doc
+  }
+
   def train(articles: List[Article]) : LDA = {
     implicit val random = new scala.util.Random(0)
     val model = DirectedModel()
@@ -103,10 +145,16 @@ object TopicModel extends Logging {
     // beta: 0.01
     // optimizeBurnIn: 100
     val lda = new LDA(WordSeqDomain, 100, 0.1, 0.01, 100)(model,random)
-    val mySegmenter = new JiebaWordSegmenter
     articles.zipWithIndex.foreach{ case(x, i) => 
-      val doc = Document.fromString(WordSeqDomain, x.title + " " + i, x.content, segmenter = mySegmenter)
-      lda.addDocument(doc, random)
+      val doc = parse_document(x.title + " " + i, x.content)
+      if(doc.ws.length > 0) {
+        try {
+          lda.addDocument(doc, random)
+        } catch {
+          case e : java.lang.IllegalArgumentException =>
+            error(f"illegal doc: $x%s due to $e%s")
+        }
+      }
     }
 
     debug("Read "+lda.documents.size+" documents, "+WordSeqDomain.elementDomain.size+" word types, "+lda.documents.map(_.ws.length).sum+" word tokens.")
