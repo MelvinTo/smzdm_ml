@@ -17,4 +17,13 @@ class TestWebParser extends FunSuite with Logging {
 		assert(enriched1.valid == false)
 		assert(enriched2.valid == false)
 	}
+
+  test("Should be able to load content") {
+    val article = new Article("华为 荣耀盒子 入手初体验")
+    article.link = "http://shaiwu.smzdm.com/p/154027"
+
+    val enriched = WebParser.enrichArticle(article)
+    assert(enriched.valid == true)
+    assert(enriched.content.length == 1469)
+  }
 }

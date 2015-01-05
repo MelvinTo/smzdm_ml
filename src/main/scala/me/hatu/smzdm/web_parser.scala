@@ -82,16 +82,27 @@ object WebParser extends Logging {
 
       val rootNode = cleaner.clean( inputStream)
 
-    // content 
-      val p_elements = rootNode.getElementsByName("p", true)
       var content = ""
-      for (elem <- p_elements) {
-        val itemprop = elem.getAttributeByName("itemprop")
-        if (itemprop != null && itemprop.equalsIgnoreCase("description")) {
-          content += elem.getText.toString
-//          debug(elem.getText.toString)
+
+    // news 
+      val div_elements = rootNode.getElementsByName("div", true)
+      for (elem <- div_elements) {
+        val elem_class = elem.getAttributeByName("class")
+        if(elem_class != null && elem_class == "news_content"){
+          content += elem.getText.toString        
         }
       }
+
+      // USE NEWS to get all contents
+    // content 
+//       val p_elements = rootNode.getElementsByName("p", true)
+//       for (elem <- p_elements) {
+//         val itemprop = elem.getAttributeByName("itemprop")
+//         if (itemprop != null && itemprop.equalsIgnoreCase("description")) {
+//           content += elem.getText.toString
+// //          debug(elem.getText.toString)
+//         }
+//       }
       article.content = content
 
     // category

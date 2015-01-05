@@ -162,6 +162,9 @@ object TopicModel extends Logging {
 
     // number of iterations: 100
     lda.inferTopics(100)
+    debug("phis: " + lda.phis.value)
+    debug("beta1: " + lda.beta1)
+    debug("numTopics: " + lda.ZDomain)
 
     // get mappings
     val mappings = get_all_mappings(lda)
